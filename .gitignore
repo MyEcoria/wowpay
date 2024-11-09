@@ -1,0 +1,8 @@
+node_modules
+*.log
+config/*.json
+config/*.mjs
+coverage
+.vscode
+package-lock.json
+bearer.ignore

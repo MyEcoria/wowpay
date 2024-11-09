@@ -1,0 +1,6 @@
+{
+    "port": 2009,
+    "work": "remote",
+    "work_url": "https://nodes.nanswap.com/XNO",
+    "NODES_API_KEY": "REDACTED"
+}
