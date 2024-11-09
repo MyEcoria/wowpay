@@ -18,12 +18,9 @@ WowPay is a payment processing application.
 │   ├── user.mjs
 │   └── wallet.mjs
 ├── config
-│   ├── db.exemple
-│   ├── db.json
-│   ├── general.exemple
-│   ├── general.json
-│   ├── wallets.exemple
-│   └── wallets.mjs
+│   ├── db.exemple => db.json
+│   ├── general.exemple => general.json
+│   ├── wallets.exemple => wallet.mjs
 ├── Dockerfile
 ├── index.mjs
 ├── modules
@@ -110,7 +107,7 @@ docker run -p 3000:2009 wowpay
 Contributions are welcome! Please open an issue or submit a pull request.
 
 ## Donation
-Nano: `nano_3ktmq6dpwcc694hrnjzfdykbqeuj4w5w8nut3uqm5pgwa4m9jmstoc4ntu6p`
+Nano: `nano_3ktmq6dpwcc694hrnjzfdykbqeuj4w5w8nut3uqm5pgwa4m9jmstoc4ntu6p` <br/>
 Wownero: `WW3K4ebLPGtFxaNyur6jkQdsC2khrUQ9BME9cmHgaJGxAzjtwYk3JfwRFuZ5U15KEvbU1VeFUa4JmWKHZmMX2vV41uxvTQuCX`
 
 ## License
