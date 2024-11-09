@@ -8,6 +8,7 @@ import mysql from 'mysql2/promise';
 import config from '../config/db.json' assert { type: 'json' };
 import Decimal from 'decimal.js';
 import { logger } from './logger.mjs';
+import { MegaToWow } from './utils.mjs';
 
 const dbConfig = {
   host: config.host,
@@ -143,7 +144,7 @@ export async function getInfoByToken(token) {
   }
 }
 
-export async function updateBalance(username, currencyt, newAmount, type) {
+export async function updateBalance(username, currencyt, newAmount, type, fee = 0) {
   const connection = await pool.getConnection();
   try {
     const currency = currencyt.toLowerCase();
@@ -164,6 +165,10 @@ export async function updateBalance(username, currencyt, newAmount, type) {
         newBalance = new Decimal(balances[currency])
           .minus(new Decimal(newAmount))
           .toNumber();
+        if (currency == "wow" && newBalance < MegaToWow(1) && fee == 0) {
+          await connection.commit();
+          return false;
+        }
       }
       if (balances[currency] < 0 || newBalance < 0) {
         logger.log({ level: 'info', message: `Negative balance: ${username} ${newBalance < 0} ${(balances[currency] < newAmount && type === "minus")}` });

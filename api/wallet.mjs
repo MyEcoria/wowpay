@@ -13,7 +13,7 @@ import requestIp from 'request-ip';
 import verifToken from './middleware/token.mjs';
 import { createDeposit, createHistory, getInfoByToken, updateBalance } from '../modules/db.mjs';
 import wownero from 'monero-nodejs-community';
-import { MegaToWow, isValidAmount } from '../modules/utils.mjs';
+import { MegaToWow, isValidAmount, isValidWowneroAddress } from '../modules/utils.mjs';
 import { generateWallet, withdraw } from '../modules/wallet.mjs';
 import converters from '../config/wallets.mjs';
 
@@ -77,38 +77,39 @@ router.post('/withdraw', verifToken, async (req, res) => {
         }
         if (inputData.currency == "wow") {
             if (!isValidWowneroAddress(inputData.destination)) {
-            return res.json({status: "error", error: "Invalid Wownero address"});
+                return res.json({status: "error", error: "Invalid Wownero address"});
             }
             const update = await updateBalance(user.username, "wow", MegaToWow(inputData.amount), "minus");
             if (update !== false) {
-            const tr = await Wallet.transfer([{"amount": Number(inputData.amount),"address": inputData.destination}], {"account_index":0,"subaddr_indices":[0],"priority":0,"ring_size":7,"get_tx_key": true});
-            if (tr.error) {
-                await updateBalance(user.username, "wow", MegaToWow(inputData.amount), "plus");
-                res.json({status: "error", error: tr.error.message});
+                const tr = await Wallet.transfer([{"amount": Number(inputData.amount),"address": inputData.destination}], {"account_index":0,"subaddr_indices":[0],"priority":0,"ring_size":7,"get_tx_key": true});
+                if (tr.error) {
+                    await updateBalance(user.username, "wow", MegaToWow(inputData.amount), "plus");
+                    res.json({status: "error", error: tr.error.message});
+                } else {
+                    await updateBalance(user.username, "wow", MegaToWow(tr["fee"]), "minus", 1);
+                    await createHistory(user.username, "withdraw", inputData.amount, tr["tx_hash"], inputData.destination, "WOW");
+                    res.json(tr);
+                }
             } else {
-                await createHistory(user.username, "withdraw", inputData.amount, tr["tx_hash"], inputData.destination, "WOW")
-                res.json(tr);
-            }
-            } else {
-            res.json({status: "error", message: "Insufficient funds"});
+                res.json({status: "error", message: "Insufficient funds (min 1 WOW in reaserve)"});
             }
         } else if (currency == "xno" || currency == "ban" || currency == "xdg" || currency == "xro" || currency == "ana") {
             let raw = converters[inputData.currency.toUpperCase()].converter.megaToRaw(inputData.amount);
             const nUpt = await updateBalance(user.username, currency, raw, "minus");
             if (nUpt) {
-            const hash = await withdraw(currency.toUpperCase(), inputData.destination, raw);
-            if (hash["hash"]) {
-                await createHistory(user.username, "withdraw", inputData.amount, hash["hash"], inputData.destination, inputData.currency.toUpperCase());
-                res.json({ status: "ok", hash: hash["hash"] })
+                const hash = await withdraw(currency.toUpperCase(), inputData.destination, raw);
+                if (hash["hash"]) {
+                    await createHistory(user.username, "withdraw", inputData.amount, hash["hash"], inputData.destination, inputData.currency.toUpperCase());
+                    res.json({ status: "ok", hash: hash["hash"] });
+                } else {
+                    await updateBalance(user.username, currency, raw, "plus");
+                    res.json({ status: "error", error: "Error during transaction" });
+                }
             } else {
-                await updateBalance(user.username, currency, raw, "plus");
-                res.json({ status: "error", error: "Error during transaction" });
-            }
-            } else {
-            res.json({ status: "error", error: "Error updating balance" });
+                res.json({ status: "error", error: "Error updating balance" });
             }
         }
-    }    
+    }
 });
 
 export default router;
